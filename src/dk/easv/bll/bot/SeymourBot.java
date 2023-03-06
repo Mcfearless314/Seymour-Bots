@@ -15,6 +15,7 @@ public class SeymourBot implements IBot{
             {1, 1} //Center
     };
     private Random rand = new Random();
+    private IMove move = null;
 
     @Override
     public String getBotName() {
@@ -23,7 +24,6 @@ public class SeymourBot implements IBot{
 
     @Override
     public IMove doMove(IGameState state) {
-        IMove move = null;
         List<IMove> moves = state.getField().getAvailableMoves();
         System.out.println(moves);
         move = preferable(state);
