@@ -5,9 +5,9 @@ import dk.easv.bll.game.GameState;
 import dk.easv.bll.game.IGameState;
 import dk.easv.bll.move.IMove;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class SeymourBot implements IBot{
     final int moveTimeMs = 1000;
@@ -20,6 +20,16 @@ public class SeymourBot implements IBot{
     private Random rand = new Random();
     private IMove move = null;
 
+    /*
+    1. Prio: vind  selv Macrospillet
+    2. prio: Stop den anden spiller fra at vinde MACRO Spillet
+    3. Prio vind selv  Microspillet
+    4. Prio stop den anden spiller fra at vinde MICRO  spillet
+    5. Prio vind  midten
+    6. Prio vind hjørnerne
+    7. Prio vind siderne
+     */
+
     @Override
     public String getBotName() {
         return BOTNAME;
@@ -29,15 +39,74 @@ public class SeymourBot implements IBot{
     public IMove doMove(IGameState state) {
         move = null;
 
+        String opponent = "0";
+        String player = "1";
+        if(state.getMoveNumber()%2==0){
+            player="0";
+            opponent = "1";
+        }
+
         List<IMove> moves = state.getField().getAvailableMoves();
 
-        move = calculateWinningMove(state, moveTimeMs);
 
-        //move = preferable(state);
 
-        if (move == null) return random(moves);
+        move = calculateWinningMoves(state, moveTimeMs);
+
+        /*
+        if(winMacro(state, move, player))
+        {
+            if (!winMacro(state, move, opponent)){
+
+            }
+        }*/
+
+        if (winMicro(state,move,player)){
+            if (winMicro(state, move, opponent)){
+                return move;
+            }
+        }
+
+
+
+        if (move == null) move = preferable(state);
+
+        if (move == null) move = random(moves);
 
         return move;
+    }
+
+    private boolean winMicro(IGameState state, IMove move, String player){
+
+        // Clones the array and all values to a new array, so we don't mess with the game
+        String[][] board = Arrays.stream(state.getField().getBoard()).map(String[]::clone).toArray(String[][]::new);
+
+        //Places the player in the game. Sort of a simulation.
+        board[move.getX()][move.getY()] = player;
+
+        int startX = move.getX()-(move.getX()%3);
+        if(board[startX][move.getY()]==player)
+            if (board[startX][move.getY()] == board[startX+1][move.getY()] &&
+                    board[startX+1][move.getY()] == board[startX+2][move.getY()])
+                return true;
+
+        int startY = move.getY()-(move.getY()%3);
+        if(board[move.getX()][startY]==player)
+            if (board[move.getX()][startY] == board[move.getX()][startY+1] &&
+                    board[move.getX()][startY+1] == board[move.getX()][startY+2])
+                return true;
+
+
+        if(board[startX][startY]==player)
+            if (board[startX][startY] == board[startX+1][startY+1] &&
+                    board[startX+1][startY+1] == board[startX+2][startY+2])
+                return true;
+
+        if(board[startX][startY+2]==player)
+            if (board[startX][startY+2] == board[startX+1][startY+1] &&
+                    board[startX+1][startY+1] == board[startX+2][startY])
+                return true;
+
+        return false;
     }
 
     private  IMove preferable(IGameState state){
@@ -85,8 +154,10 @@ public class SeymourBot implements IBot{
     }
 
     // Plays single games until it wins and returns the first move for that. If iterations reached with no clear win, just return random valid move
-    private IMove calculateWinningMove(IGameState state, int maxTimeMs){
+    private IMove calculateWinningMoves(IGameState state, int maxTimeMs){
         long time = System.currentTimeMillis();
+        List<IMove> winningMoves = new ArrayList<>();
+
         Random rand = new Random();
         int count = 0;
         while (System.currentTimeMillis() < time + maxTimeMs) { // check how much time has passed, stop if over maxTimeMs
@@ -113,14 +184,13 @@ public class SeymourBot implements IBot{
 
             if (simulator.getGameOver()== SeymourBot.GameOverState.Win){
                 //System.out.println("Found a win, :)");
-                return winnerMove; // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
+                winningMoves.add(winnerMove); // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
             }
             count++;
         }
-        //System.out.println("Did not win, just doing random :¨(");
-        List<IMove> moves = state.getField().getAvailableMoves();
-        IMove randomMovePlayer = moves.get(rand.nextInt(moves.size()));
-        return randomMovePlayer; // just play randomly if solution not found
+
+        //returns the common value of the arraylist == winning move.
+        return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
     /*
