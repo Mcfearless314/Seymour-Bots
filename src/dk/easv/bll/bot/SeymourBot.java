@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SeymourBot implements IBot{
-    final int moveTimeMs = 1000;
+    final int moveTimeMs = 200;
     private static final String BOTNAME = "Seymour-Bots";
     protected int[][] preferredMoves = {
             {0, 1}, {2, 1}, {1, 0}, {1, 2}, //Outer Middles ordered across
@@ -156,7 +156,7 @@ public class SeymourBot implements IBot{
     // Plays single games until it wins and returns the first move for that. If iterations reached with no clear win, just return random valid move
     private IMove calculateWinningMoves(IGameState state, int maxTimeMs){
         long time = System.currentTimeMillis();
-        List<IMove> winningMoves = new ArrayList<>();
+        ArrayList<IMove> winningMoves = new ArrayList<>();
 
         Random rand = new Random();
         int count = 0;
@@ -190,6 +190,16 @@ public class SeymourBot implements IBot{
         }
 
         //returns the common value of the arraylist == winning move.
+        /*int mostOccurring = 0;
+        int maxCount = 0;
+        int n = winningMoves.size()-1;
+        for (IMove move: winningMoves) {
+            if ()
+            }
+        }*/
+
+        //System.out.println(winningMoves.size());
+        //System.out.println(winningMoves);
         return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
