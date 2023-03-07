@@ -24,6 +24,8 @@ public class SeymourBot implements IBot{
 
     @Override
     public IMove doMove(IGameState state) {
+        move = null;
+
         List<IMove> moves = state.getField().getAvailableMoves();
         System.out.println(moves);
         move = preferable(state);
