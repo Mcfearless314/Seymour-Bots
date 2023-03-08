@@ -20,6 +20,9 @@ public class SeymourBot implements IBot{
     private Random rand = new Random();
     private IMove move = null;
 
+    private String opponent = "";
+    private String player = "";
+
     /*
     1. Prio: vind  selv Macrospillet
     2. prio: Stop den anden spiller fra at vinde MACRO Spillet
@@ -39,8 +42,8 @@ public class SeymourBot implements IBot{
     public IMove doMove(IGameState state) {
         move = null;
 
-        String opponent = "0";
-        String player = "1";
+        opponent = "0";
+        player = "1";
         if(state.getMoveNumber()%2==0){
             player="0";
             opponent = "1";
@@ -59,6 +62,7 @@ public class SeymourBot implements IBot{
 
             }
         }*/
+
 
         if (winMicro(state,move,player)){
             if (winMicro(state, move, opponent)){
@@ -82,6 +86,17 @@ public class SeymourBot implements IBot{
 
         //Places the player in the game. Sort of a simulation.
         board[move.getX()][move.getY()] = player;
+
+        //Sout board
+        /*
+        for (int x = 0; x < 9; x++){
+            System.out.println();
+            for (int y = 0; y < 9; y++){
+                System.out.print(board[y][x]+" ");
+            }
+        }
+        System.out.println("\n");
+         */
 
         int startX = move.getX()-(move.getX()%3);
         if(board[startX][move.getY()]==player)
@@ -159,11 +174,19 @@ public class SeymourBot implements IBot{
         ArrayList<IMove> winningMoves = new ArrayList<>();
 
         Random rand = new Random();
-        int count = 0;
         while (System.currentTimeMillis() < time + maxTimeMs) { // check how much time has passed, stop if over maxTimeMs
             SeymourBot.GameSimulator simulator = createSimulator(state);
             IGameState gs = simulator.getCurrentState();
             List<IMove> moves = gs.getField().getAvailableMoves();
+
+            List<IMove> legalMoves = state.getField().getAvailableMoves();
+
+            for (IMove move: moves) {
+                if(!legalMoves.contains(move)){
+                    moves.remove(move);
+                }
+            }
+
             IMove randomMovePlayer = moves.get(rand.nextInt(moves.size()));
             IMove winnerMove = randomMovePlayer;
 
@@ -184,20 +207,15 @@ public class SeymourBot implements IBot{
 
             if (simulator.getGameOver()== SeymourBot.GameOverState.Win){
                 //System.out.println("Found a win, :)");
+
+                System.out.println(winMicro(state,winnerMove,player));
+                if (winMicro(state,winnerMove,player)) return winnerMove;
+
                 winningMoves.add(winnerMove); // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
             }
-            count++;
         }
 
         //returns the common value of the arraylist == winning move.
-        /*int mostOccurring = 0;
-        int maxCount = 0;
-        int n = winningMoves.size()-1;
-        for (IMove move: winningMoves) {
-            if ()
-            }
-        }*/
-
         //System.out.println(winningMoves.size());
         //System.out.println(winningMoves);
         return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
