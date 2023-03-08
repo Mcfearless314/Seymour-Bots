@@ -1,9 +1,11 @@
 package dk.easv.bll.bot;
 
 import dk.easv.bll.field.IField;
+import dk.easv.bll.game.GameManager;
 import dk.easv.bll.game.GameState;
 import dk.easv.bll.game.IGameState;
 import dk.easv.bll.move.IMove;
+import dk.easv.bll.move.Move;
 
 import java.util.*;
 import java.util.function.Function;
@@ -79,7 +81,55 @@ public class SeymourBot implements IBot{
         return move;
     }
 
+
     private boolean winMicro(IGameState state, IMove move, String player){
+        String[][] board = Arrays.stream(state.getField().getBoard()).map(String[]::clone).toArray(String[][]::new);
+
+        board[move.getX()][move.getY()] = player;
+
+        int localX = move.getX() % 3;
+        int localY = move.getY() % 3;
+        int startX = move.getX() - (localX);
+        int startY = move.getY() - (localY);
+
+        //check col
+        for (int i = startY; i < startY + 3; i++) {
+            if (!board[move.getX()][i].equals(player))
+                break;
+            if (i == startY + 2) return true;
+        }
+
+        //check row
+        for (int i = startX; i < startX + 3; i++) {
+            if (!board[i][move.getY()].equals(player))
+                break;
+            if (i == startX + 2) return true;
+        }
+
+        //check diagonal
+        if (localX == localY) {
+            //we're on a diagonal
+            int y = startY;
+            for (int i = startX; i < startX + 3; i++) {
+                if (!board[i][y++].equals(player))
+                    break;
+                if (i == startX + 2) return true;
+            }
+        }
+
+        //check anti diagonal
+        if (localX + localY == 2) {
+            int less = 0;
+            for (int i = startX; i < startX + 3; i++) {
+                if (!board[i][(startY + 2)-less++].equals(player))
+                    break;
+                if (i == startX + 2) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean winMicro2(IGameState state, IMove move, String player){
 
         // Clones the array and all values to a new array, so we don't mess with the game
         String[][] board = Arrays.stream(state.getField().getBoard()).map(String[]::clone).toArray(String[][]::new);
@@ -99,27 +149,31 @@ public class SeymourBot implements IBot{
          */
 
         int startX = move.getX()-(move.getX()%3);
-        if(board[startX][move.getY()]==player)
-            if (board[startX][move.getY()] == board[startX+1][move.getY()] &&
-                    board[startX+1][move.getY()] == board[startX+2][move.getY()])
+        if(Objects.equals(board[startX][move.getY()], player))
+            if (Objects.equals(board[startX][move.getY()], board[startX + 1][move.getY()]) &&
+                    Objects.equals(board[startX + 1][move.getY()], board[startX + 2][move.getY()])){
                 return true;
+            }
 
         int startY = move.getY()-(move.getY()%3);
-        if(board[move.getX()][startY]==player)
-            if (board[move.getX()][startY] == board[move.getX()][startY+1] &&
-                    board[move.getX()][startY+1] == board[move.getX()][startY+2])
+        if(Objects.equals(board[move.getX()][startY], player))
+            if (Objects.equals(board[move.getX()][startY], board[move.getX()][startY + 1]) &&
+                    Objects.equals(board[move.getX()][startY + 1], board[move.getX()][startY + 2])){
                 return true;
+            }
 
 
-        if(board[startX][startY]==player)
-            if (board[startX][startY] == board[startX+1][startY+1] &&
-                    board[startX+1][startY+1] == board[startX+2][startY+2])
+        if(Objects.equals(board[startX][startY], player))
+            if (Objects.equals(board[startX][startY], board[startX + 1][startY + 1]) &&
+                    Objects.equals(board[startX + 1][startY + 1], board[startX + 2][startY + 2])){
                 return true;
+            }
 
-        if(board[startX][startY+2]==player)
-            if (board[startX][startY+2] == board[startX+1][startY+1] &&
-                    board[startX+1][startY+1] == board[startX+2][startY])
+        if(Objects.equals(board[startX][startY + 2], player))
+            if ((Objects.equals(board[startX][startY + 2], board[startX + 1][startY + 1])) &&
+                    (Objects.equals(board[startX + 1][startY + 1], board[startX + 2][startY]))){
                 return true;
+            }
 
         return false;
     }
@@ -208,8 +262,10 @@ public class SeymourBot implements IBot{
             if (simulator.getGameOver()== SeymourBot.GameOverState.Win){
                 //System.out.println("Found a win, :)");
 
-                System.out.println(winMicro(state,winnerMove,player));
+                if (winMicro2(state,winnerMove,player)) return winnerMove;
+
                 if (winMicro(state,winnerMove,player)) return winnerMove;
+
 
                 winningMoves.add(winnerMove); // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
             }
