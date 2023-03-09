@@ -53,8 +53,6 @@ public class SeymourBot implements IBot{
 
         List<IMove> moves = state.getField().getAvailableMoves();
 
-
-
         move = calculateWinningMoves(state, moveTimeMs);
 
         /*
@@ -64,18 +62,6 @@ public class SeymourBot implements IBot{
 
             }
         }*/
-
-        /*
-        if (winMicro(state,move,player)){
-            return move;
-        }
-        if (winMicro(state, move, opponent)){
-            return move;
-        }
-         */
-
-
-
 
         if (move == null) move = preferable(state);
 
@@ -285,6 +271,35 @@ public class SeymourBot implements IBot{
         //System.out.println(winningMoves.size());
         //System.out.println(winningMoves);
         //list of winning moves. retuns the most common move, that won the simulations
+
+        IMove move = null;
+        IMove savedMove = null;
+        int moveCount = 0;
+        int count = 0;
+        for (IMove move1:winningMoves) {
+            for (IMove move2:winningMoves) {
+                move = move1;
+                if (move2.equals(move1)){
+                    count++;
+                }
+            }
+            if (count > moveCount){
+                moveCount = count;
+                savedMove = move;
+            }
+            count = 0;
+            move = null;
+        }
+        if (savedMove != null){
+
+            System.out.println(savedMove.toString());
+        }else {
+            //return a move if null
+
+        }
+        return savedMove;
+
+        /*
         int maxcount = 0;
         IMove element_having_max_freq = null;
         for (int i = 0; i < winningMoves.size(); i++) {
@@ -300,9 +315,9 @@ public class SeymourBot implements IBot{
             }
         }
 
-        System.out.println("Retuned move: " + element_having_max_freq.toString());
+        if (element_having_max_freq != null)System.out.println("Retuned move: " + element_having_max_freq.toString());
         return element_having_max_freq;
-
+         */
         //return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
