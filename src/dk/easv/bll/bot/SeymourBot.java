@@ -252,14 +252,13 @@ public class SeymourBot implements IBot{
             if (simulator.getGameOver()== SeymourBot.GameOverState.Win){
                 //System.out.println("Found a win, :)");
 
-                if (winMicro2(state,winnerMove,player)) {
-                    System.out.println("Win GAME----------------------");return winnerMove;}
+                if (winMicro2(state,winnerMove,player)) return winnerMove;
 
                 //Check if we can win
                 //TODO never used
-                if (winMicro(state,winnerMove,player)) {System.out.println("MicroWin");return winnerMove;}
+                if (winMicro(state,winnerMove,player)) return winnerMove;
                 //Check for sabotage
-                if (winMicro(state,winnerMove,opponent)) {System.out.println("sabotage"); return winnerMove;}
+                if (winMicro(state,winnerMove,opponent)) return winnerMove;
 
                 //TODO prio do not send opponent to a micro that is won
 
@@ -271,6 +270,8 @@ public class SeymourBot implements IBot{
         //System.out.println(winningMoves.size());
         //System.out.println(winningMoves);
         //list of winning moves. retuns the most common move, that won the simulations
+
+        if(winningMoves.isEmpty()) return null;
 
         IMove move = null;
         IMove savedMove = null;
@@ -290,35 +291,8 @@ public class SeymourBot implements IBot{
             count = 0;
             move = null;
         }
-        if (savedMove != null){
-
-            System.out.println(savedMove.toString());
-        }else {
-            //return a move if null
-
-        }
         return savedMove;
 
-        /*
-        int maxcount = 0;
-        IMove element_having_max_freq = null;
-        for (int i = 0; i < winningMoves.size(); i++) {
-            int count = 0;
-            for (int j = 0; j < winningMoves.size(); j++) {
-                if (winningMoves.get(i) == winningMoves.get(j)) {
-                    count++;
-                }
-            }
-            if (count > maxcount) {
-                maxcount = count;
-                element_having_max_freq = winningMoves.get(i);
-            }
-        }
-
-        if (element_having_max_freq != null)System.out.println("Retuned move: " + element_having_max_freq.toString());
-        return element_having_max_freq;
-         */
-        //return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
     /*
