@@ -21,16 +21,6 @@ public class SeymourBot implements IBot {
     private String opponent = "";
     private String player = "";
 
-    /*
-    1. Prio: vind  selv Macrospillet
-    2. prio: Stop den anden spiller fra at vinde MACRO Spillet
-    3. Prio vind selv  Microspillet
-    4. Prio stop den anden spiller fra at vinde MICRO  spillet
-    5. Prio vind  midten
-    6. Prio vind hjørnerne
-    7. Prio vind siderne
-     */
-
     @Override
     public String getBotName() {
         return BOTNAME;
@@ -47,15 +37,17 @@ public class SeymourBot implements IBot {
             opponent = "1";
         }
 
-        move = canWinMacro(state, player);
+        //If the move number is less than 8, we probably can't win the full game, so no need  to check
+        if (state.getMoveNumber() > 8) {
+            move = canWinMacro(state, player);
+        }
+
 
         if (move != null) return move;
 
         List<IMove> moves = state.getField().getAvailableMoves();
 
         List<IMove> badMoves = getListOfBadMoves(moves, state, opponent);
-
-        //TODO CAN WIN MACRO
 
         List<IMove> bestMoves = new ArrayList<>();
 
@@ -82,23 +74,21 @@ public class SeymourBot implements IBot {
             move = calculateWinningMoves(state, moveTimeMs, moves);
         }
 
-        /*
-        if(winMacro(state, move, player))
-        {
-            if (!winMacro(state, move, opponent)){
-
-            }
-        }*/
-
         if (move == null) move = preferable(state);
 
         if (move == null) move = random(moves);
 
         return move;
 
-
     }
 
+    /**
+     * Check to see if we can win the whole game with one move
+     *
+     * @param state
+     * @param player
+     * @return the winning move
+     */
     private IMove canWinMacro(IGameState state, String player) {
         String[][] macroBoard = Arrays.stream(state.getField().getMacroboard()).map(String[]::clone).toArray(String[][]::new);
 
@@ -163,6 +153,14 @@ public class SeymourBot implements IBot {
         return null;
     }
 
+    /**
+     * Check which moves send an opponent to a field where they can win a MicroField
+     *
+     * @param moves
+     * @param state
+     * @param opponent
+     * @return List of bad moves
+     */
     private List<IMove> getListOfBadMoves(List<IMove> moves, IGameState state, String opponent) {
         String[][] macroBoard = Arrays.stream(state.getField().getMacroboard()).map(String[]::clone).toArray(String[][]::new);
         List<IMove> badMoves = new ArrayList<>();
@@ -211,7 +209,14 @@ public class SeymourBot implements IBot {
         return badMoves;
     }
 
-
+    /**
+     * Check if a move can win a micro field
+     *
+     * @param state
+     * @param move
+     * @param player
+     * @return boolean, true if we can, false if we can't
+     */
     private boolean winMicro(IGameState state, IMove move, String player) {
         String[][] board = Arrays.stream(state.getField().getBoard()).map(String[]::clone).toArray(String[][]::new);
 
@@ -259,7 +264,12 @@ public class SeymourBot implements IBot {
         return false;
     }
 
-
+    /**
+     * Prioritized moves which we use in case we don't have any other moves.
+     *
+     * @param state
+     * @return
+     */
     private IMove preferable(IGameState state) {
         for (int[] move : preferredMoves) {
             if (state.getField().getMacroboard()[move[0]][move[1]].equals(IField.AVAILABLE_FIELD)) {
@@ -276,7 +286,12 @@ public class SeymourBot implements IBot {
         return null;
     }
 
-
+    /**
+     * If prio moves fails, we use a random move
+     *
+     * @param moves
+     * @return
+     */
     private IMove random(List<IMove> moves) {
         if (moves.size() > 0) {
             return moves.get(rand.nextInt(moves.size()));
@@ -304,8 +319,7 @@ public class SeymourBot implements IBot {
         while (System.currentTimeMillis() < time + maxTimeMs) { // check how much time has passed, stop if over maxTimeMs
             SeymourBot.GameSimulator simulator = createSimulator(state);
             IGameState gs = simulator.getCurrentState();
-            //TODO What is the difference between moves and legal moves
-            List<IMove> moves = gs.getField().getAvailableMoves();
+            List<IMove> moves;
 
 
             IMove randomMovePlayer = givenMoves.get(rand.nextInt(givenMoves.size()));
@@ -322,32 +336,23 @@ public class SeymourBot implements IBot {
                 }
 
                 if (simulator.getGameOver() == SeymourBot.GameOverState.Active) { // game still going
-                    //moves = gs.getField().getAvailableMoves();
                     randomMovePlayer = givenMoves.get(rand.nextInt(givenMoves.size()));
                 }
             }
 
             if (simulator.getGameOver() == SeymourBot.GameOverState.Win) {
-                //System.out.println("Found a win, :)");
-
-
                 //Check if we can win
-                //TODO never used
                 if (winMicro(state, winnerMove, player)) return winnerMove;
                 //Check for sabotage
                 if (winMicro(state, winnerMove, opponent)) return winnerMove;
-
-                //TODO prio do not send opponent to a micro that is won
 
                 winningMoves.add(winnerMove); // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
             }
 
         }
-        //returns the common value of the arraylist == winning move.
-        //System.out.println(winningMoves.size());
-        //System.out.println(winningMoves);
-        //list of winning moves. retuns the most common move, that won the simulations
 
+
+        //list of winning moves. returns the most common move, that won the simulations
         if (winningMoves.isEmpty()) return null;
 
         IMove move = null;
