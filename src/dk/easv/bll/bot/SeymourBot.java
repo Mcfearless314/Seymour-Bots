@@ -8,12 +8,12 @@ import dk.easv.bll.move.IMove;
 import java.util.*;
 
 public class SeymourBot implements IBot {
-    final int moveTimeMs = 200;
+    final int moveTimeMs = 300;
     private static final String BOTNAME = "Seymour-Bots";
     protected int[][] preferredMoves = {
-            {0, 1}, {2, 1}, {1, 0}, {1, 2}, //Outer Middles ordered across
+            {1, 1}, //Center
             {0, 0}, {2, 2}, {0, 2}, {2, 0},  //Corners ordered across
-            {1, 1} //Center
+            {0, 1}, {2, 1}, {1, 0}, {1, 2} //Outer Middles ordered across
     };
     private Random rand = new Random();
     private IMove move = null;
