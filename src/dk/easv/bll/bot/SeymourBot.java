@@ -65,12 +65,15 @@ public class SeymourBot implements IBot{
             }
         }*/
 
-
+        /*
         if (winMicro(state,move,player)){
-            if (winMicro(state, move, opponent)){
-                return move;
-            }
+            return move;
         }
+        if (winMicro(state, move, opponent)){
+            return move;
+        }
+         */
+
 
 
 
@@ -231,6 +234,7 @@ public class SeymourBot implements IBot{
         while (System.currentTimeMillis() < time + maxTimeMs) { // check how much time has passed, stop if over maxTimeMs
             SeymourBot.GameSimulator simulator = createSimulator(state);
             IGameState gs = simulator.getCurrentState();
+            //TODO What is the difference between moves and legal moves
             List<IMove> moves = gs.getField().getAvailableMoves();
 
             List<IMove> legalMoves = state.getField().getAvailableMoves();
@@ -262,10 +266,16 @@ public class SeymourBot implements IBot{
             if (simulator.getGameOver()== SeymourBot.GameOverState.Win){
                 //System.out.println("Found a win, :)");
 
-                if (winMicro2(state,winnerMove,player)) return winnerMove;
+                if (winMicro2(state,winnerMove,player)) {
+                    System.out.println("Win GAME----------------------");return winnerMove;}
 
-                if (winMicro(state,winnerMove,player)) return winnerMove;
+                //Check if we can win
+                //TODO never used
+                if (winMicro(state,winnerMove,player)) {System.out.println("MicroWin");return winnerMove;}
+                //Check for sabotage
+                if (winMicro(state,winnerMove,opponent)) {System.out.println("sabotage"); return winnerMove;}
 
+                //TODO prio do not send opponent to a micro that is won
 
                 winningMoves.add(winnerMove); // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
             }
@@ -274,7 +284,26 @@ public class SeymourBot implements IBot{
         //returns the common value of the arraylist == winning move.
         //System.out.println(winningMoves.size());
         //System.out.println(winningMoves);
-        return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
+        //list of winning moves. retuns the most common move, that won the simulations
+        int maxcount = 0;
+        IMove element_having_max_freq = null;
+        for (int i = 0; i < winningMoves.size(); i++) {
+            int count = 0;
+            for (int j = 0; j < winningMoves.size(); j++) {
+                if (winningMoves.get(i) == winningMoves.get(j)) {
+                    count++;
+                }
+            }
+            if (count > maxcount) {
+                maxcount = count;
+                element_having_max_freq = winningMoves.get(i);
+            }
+        }
+
+        System.out.println("Retuned move: " + element_having_max_freq.toString());
+        return element_having_max_freq;
+
+        //return winningMoves.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
     }
 
     /*
