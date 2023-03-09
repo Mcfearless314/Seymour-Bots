@@ -47,9 +47,15 @@ public class SeymourBot implements IBot {
             opponent = "1";
         }
 
+        move = canWinMacro(state,player);
+
+        if (move != null) return move;
+
         List<IMove> moves = state.getField().getAvailableMoves();
 
         List<IMove> badMoves = getListOfBadMoves(moves, state, opponent);
+
+        //TODO CAN WIN MACRO
 
         List<IMove> bestMoves = new ArrayList<>();
 
@@ -91,6 +97,70 @@ public class SeymourBot implements IBot {
         return move;
 
 
+    }
+
+    private IMove canWinMacro(IGameState state, String player){
+        String[][] macroBoard = Arrays.stream(state.getField().getMacroboard()).map(String[]::clone).toArray(String[][]::new);
+
+
+        for (IMove move : state.getField().getAvailableMoves()) {
+
+
+            int localX = move.getX() % 3;
+            int localY = move.getY() % 3;
+
+
+            for (int i = 0; i < 2; i++) {
+                if (!macroBoard[localX][i].equals(player))
+                    break;
+                if (i == 1) {
+                    if (winMicro(state,move,player)){
+                        return move;
+                    }
+                }
+            }
+
+            //check row
+            for (int i = 0; i < 2; i++) {
+                if (!macroBoard[i][localY].equals(player))
+                    break;
+                if (i == 1) {
+                    if (winMicro(state,move,player)){
+                        return move;
+                    }
+                }
+            }
+
+            //check diagonal
+            if (localX == localY) {
+                //we're on a diagonal
+                int y = 0;
+                for (int i = 0; i < 2; i++) {
+                    if (!macroBoard[i][y++].equals(player))
+                        break;
+                    if (i == 1) {
+                        if (winMicro(state,move,player)){
+                            return move;
+                        }
+                    }
+                }
+            }
+            //check anti diagonal
+            if (localX + localY == 2) {
+                int less = 0;
+                for (int i = 0; i < 2; i++) {
+                    if (!macroBoard[i][(2) - less++].equals(player))
+                        break;
+                    if (i == 1) {
+                        if (winMicro(state,move,player)){
+                            return move;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private List<IMove> getListOfBadMoves(List<IMove> moves, IGameState state, String opponent) {
@@ -189,54 +259,6 @@ public class SeymourBot implements IBot {
         return false;
     }
 
-    private boolean winMicro2(IGameState state, IMove move, String player) {
-
-        // Clones the array and all values to a new array, so we don't mess with the game
-        String[][] board = Arrays.stream(state.getField().getBoard()).map(String[]::clone).toArray(String[][]::new);
-
-        //Places the player in the game. Sort of a simulation.
-        board[move.getX()][move.getY()] = player;
-
-        //Sout board
-        /*
-        for (int x = 0; x < 9; x++){
-            System.out.println();
-            for (int y = 0; y < 9; y++){
-                System.out.print(board[y][x]+" ");
-            }
-        }
-        System.out.println("\n");
-         */
-
-        int startX = move.getX() - (move.getX() % 3);
-        if (Objects.equals(board[startX][move.getY()], player))
-            if (Objects.equals(board[startX][move.getY()], board[startX + 1][move.getY()]) &&
-                    Objects.equals(board[startX + 1][move.getY()], board[startX + 2][move.getY()])) {
-                return true;
-            }
-
-        int startY = move.getY() - (move.getY() % 3);
-        if (Objects.equals(board[move.getX()][startY], player))
-            if (Objects.equals(board[move.getX()][startY], board[move.getX()][startY + 1]) &&
-                    Objects.equals(board[move.getX()][startY + 1], board[move.getX()][startY + 2])) {
-                return true;
-            }
-
-
-        if (Objects.equals(board[startX][startY], player))
-            if (Objects.equals(board[startX][startY], board[startX + 1][startY + 1]) &&
-                    Objects.equals(board[startX + 1][startY + 1], board[startX + 2][startY + 2])) {
-                return true;
-            }
-
-        if (Objects.equals(board[startX][startY + 2], player))
-            if ((Objects.equals(board[startX][startY + 2], board[startX + 1][startY + 1])) &&
-                    (Objects.equals(board[startX + 1][startY + 1], board[startX + 2][startY]))) {
-                return true;
-            }
-
-        return false;
-    }
 
     private IMove preferable(IGameState state) {
         for (int[] move : preferredMoves) {
@@ -254,10 +276,6 @@ public class SeymourBot implements IBot {
         return null;
     }
 
-    private void checkMoves(List<IMove> moves) {
-        for (IMove move : moves) {
-        }
-    }
 
     private IMove random(List<IMove> moves) {
         if (moves.size() > 0) {
@@ -302,6 +320,7 @@ public class SeymourBot implements IBot {
                         IMove randomMoveOpponent = moves.get(rand.nextInt(moves.size()));
                         simulator.updateGame(randomMoveOpponent);
                     }
+
                     if (simulator.getGameOver() == SeymourBot.GameOverState.Active) { // game still going
                         //moves = gs.getField().getAvailableMoves();
                         randomMovePlayer = givenMoves.get(rand.nextInt(givenMoves.size()));
@@ -311,7 +330,6 @@ public class SeymourBot implements IBot {
                 if (simulator.getGameOver() == SeymourBot.GameOverState.Win) {
                     //System.out.println("Found a win, :)");
 
-                    if (winMicro2(state, winnerMove, player)) return winnerMove;
 
                     //Check if we can win
                     //TODO never used
