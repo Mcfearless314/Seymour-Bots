@@ -51,7 +51,30 @@ public class SeymourBot implements IBot {
 
         List<IMove> badMoves = getListOfBadMoves(moves, state, opponent);
 
-        move = calculateWinningMoves(state, moveTimeMs, badMoves);
+        List<IMove> bestMoves = new ArrayList<>();
+
+        if (!moves.isEmpty() && !badMoves.isEmpty()) {
+            for (IMove move : moves) {
+                if (!badMoves.contains(move))
+                    bestMoves.add(move);
+
+            }
+        }
+
+        List<IMove> legalMoves = state.getField().getAvailableMoves();
+        if (!bestMoves.isEmpty()) {
+            for (IMove move : bestMoves) {
+                if (!legalMoves.contains(move)) {
+                    bestMoves.remove(move);
+                }
+            }
+        }
+
+        if (!bestMoves.isEmpty()){
+            move = calculateWinningMoves(state, moveTimeMs, bestMoves);
+        } else{
+            move = calculateWinningMoves(state, moveTimeMs, moves);
+        }
 
         /*
         if(winMacro(state, move, player))
@@ -256,10 +279,9 @@ public class SeymourBot implements IBot {
     }
 
     // Plays single games until it wins and returns the first move for that. If iterations reached with no clear win, just return random valid move
-    private IMove calculateWinningMoves(IGameState state, int maxTimeMs, List<IMove> badMoves) {
+    private IMove calculateWinningMoves(IGameState state, int maxTimeMs, List<IMove> givenMoves) {
         long time = System.currentTimeMillis();
         ArrayList<IMove> winningMoves = new ArrayList<>();
-        List<IMove> bestMoves = new ArrayList<>();
         Random rand = new Random();
         while (System.currentTimeMillis() < time + maxTimeMs) { // check how much time has passed, stop if over maxTimeMs
             SeymourBot.GameSimulator simulator = createSimulator(state);
@@ -267,23 +289,8 @@ public class SeymourBot implements IBot {
             //TODO What is the difference between moves and legal moves
             List<IMove> moves = gs.getField().getAvailableMoves();
 
-            if (!moves.isEmpty() && !badMoves.isEmpty()) {
-                for (IMove move : moves) {
-                    if (!badMoves.contains(move))
-                        bestMoves.add(move);
 
-                }
-            }
-
-            List<IMove> legalMoves = state.getField().getAvailableMoves();
-            if (!bestMoves.isEmpty()) {
-                for (IMove move : bestMoves) {
-                    if (!legalMoves.contains(move)) {
-                        bestMoves.remove(move);
-                    }
-                }
-
-                IMove randomMovePlayer = moves.get(rand.nextInt(moves.size()));
+                IMove randomMovePlayer = givenMoves.get(rand.nextInt(givenMoves.size()));
                 IMove winnerMove = randomMovePlayer;
 
                 while (simulator.getGameOver() == SeymourBot.GameOverState.Active) { // Game not ended
@@ -291,11 +298,13 @@ public class SeymourBot implements IBot {
 
                     // Opponent plays randomly
                     if (simulator.getGameOver() == SeymourBot.GameOverState.Active) { // game still going
+                        moves = gs.getField().getAvailableMoves();
                         IMove randomMoveOpponent = moves.get(rand.nextInt(moves.size()));
                         simulator.updateGame(randomMoveOpponent);
                     }
                     if (simulator.getGameOver() == SeymourBot.GameOverState.Active) { // game still going
-                        randomMovePlayer = moves.get(rand.nextInt(moves.size()));
+                        //moves = gs.getField().getAvailableMoves();
+                        randomMovePlayer = givenMoves.get(rand.nextInt(givenMoves.size()));
                     }
                 }
 
@@ -314,7 +323,7 @@ public class SeymourBot implements IBot {
 
                     winningMoves.add(winnerMove); // Hint you could maybe save multiple games and pick the best? Now it just returns at a possible victory
                 }
-            }
+
         }
             //returns the common value of the arraylist == winning move.
             //System.out.println(winningMoves.size());
